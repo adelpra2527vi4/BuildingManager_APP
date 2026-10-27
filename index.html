@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e16">
+<meta name="referrer" content="no-referrer">
+<title>Building Live</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><i></i><i></i></div>
+
+<main id="app" hidden>
+  <header>
+    <div><h1 id="bname">Building</h1><span class="live"><i></i><span id="clock">live</span></span></div>
+    <div class="tot" id="totals"></div>
+  </header>
+  <nav class="tabs" id="tabs" aria-label="Piani"></nav>
+  <nav class="chips" id="chips" aria-label="Metrica"></nav>
+  <section id="map" class="map"></section>
+  <div class="legend" id="legend"></div>
+  <section class="showcase" id="showcase">
+    <button data-show="air"><span>✦</span><b>Respira l'aria</b><small>CO₂ in tempo reale</small></button>
+    <button data-show="spec"><span>✦</span><b>Vedi la luce</b><small>spettro e colore</small></button>
+  </section>
+  <p class="foot" id="foot"></p>
+</main>
+
+<section id="gate" class="gate" hidden>
+  <div class="gate-card">
+    <div class="qr-ico" aria-hidden="true"></div>
+    <h2 id="gate-t">Inquadra il QR allo stand</h2>
+    <p id="gate-p">Questa vista live è riservata ai visitatori. Scansiona il QR code per entrare.</p>
+  </div>
+</section>
+
+<div id="sheet" class="sheet" hidden>
+  <div class="backdrop" id="backdrop"></div>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sh-title">
+    <div class="grab"></div>
+    <button class="x" id="sh-x" aria-label="Chiudi">×</button>
+    <h2 id="sh-title"></h2><p class="sub" id="sh-sub"></p>
+    <div class="tiles" id="sh-tiles"></div>
+    <section class="viz air" id="sh-air">
+      <canvas></canvas>
+      <div class="over"><b id="air-ppm">—</b><span>ppm CO₂</span><em id="air-v"></em></div>
+    </section>
+    <section class="viz spec" id="sh-spec">
+      <div class="vh"><h3>Spettro della luce</h3><select id="spec-node" hidden></select><span class="cct" id="spec-cct"></span></div>
+      <canvas class="spc"></canvas>
+      <div class="vh"><h3>Colore della sorgente</h3></div>
+      <canvas class="chr"></canvas>
+    </section>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
