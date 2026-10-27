@@ -1,5 +1,7 @@
 # Building Live (web app da fiera)
 
+> Stato del lavoro, architettura, contratto API e prossimi passi: vedi [PLAN.md](PLAN.md).
+
 Web app statica (HTML/CSS/JS, nessuna build) per vedere da smartphone la mappa del Building Manager con dati live: temperatura, CO₂, umidità, luce, potenza; scheda zona con aria animata (CO₂) e spettro/colore della luce. Pubblicata con GitHub Pages; i dati arrivano dal Raspberry (`Manager-raspi`, modulo `fair_api.py`) tramite Tailscale Funnel.
 
 ## Come funziona l'accesso
