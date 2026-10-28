@@ -51,7 +51,7 @@ async function post(s, zona, azione, body) {
     method: 'POST', headers: { Authorization: 'Bearer ' + s.t, 'Content-Type': 'application/json' },
     body: JSON.stringify(body), cache: 'no-store',
   });
-  if (!r.ok) throw new Error('http ' + r.status);
+  if (!r.ok) throw Object.assign(new Error('http ' + r.status), { status: r.status });
   return r.json();
 }
 
@@ -60,3 +60,6 @@ export const setLights = (s, zona, body) => post(s, zona, 'luci', body);
 
 /** Relè di una zona: { k, on } per categoria, { k: 'ventola', vel: 0..3 }, oppure { manuale: false } per tornare in automatico. Con token. */
 export const setRele = (s, zona, body) => post(s, zona, 'rele', body);
+
+/** Taratura della stima persone: { n } = persone presenti ora, oppure { reset: true }. Con token. */
+export const setPersone = (s, zona, body) => post(s, zona, 'persone', body);

@@ -1,4 +1,4 @@
-import { initSession, getState, getHistory, getPlanUrl, clearSession, expiresAt, setLights, setRele } from './api.js';
+import { initSession, getState, getHistory, getPlanUrl, clearSession, expiresAt, setLights, setRele, setPersone } from './api.js';
 import { demoState, demoHistory, demoRele } from './demo.js';
 import { estimatePeople } from './occupancy.js';
 import { createMap } from './map.js';
@@ -126,11 +126,11 @@ $('ct').style.background = ctGradient(CT_MIN, CT_MAX);
 const pos = (m, v) => Math.min(100, Math.max(0, (v - RANGE[m][0]) / (RANGE[m][1] - RANGE[m][0]) * 100)) + '%';
 
 // ---------------------------------------------------------------- scheda zona
-let spec = null, zonesSig = '', histKey = '', histAt = 0, histPts = null, chartCtx = null, dimHold = 0, ctHold = 0, releSig = '';
+let spec = null, zonesSig = '', histKey = '', histAt = 0, histPts = null, chartCtx = null, dimHold = 0, ctHold = 0, releSig = '', settingsOpen = false;
 
 function openSheet(id, mode = 'metric') {
   if (!S.data || !(mode in MODES)) return;
-  S.sel = id; S.mode = mode; histKey = ''; zonesSig = ''; dimHold = ctHold = 0;
+  S.sel = id; S.mode = mode; histKey = ''; zonesSig = ''; dimHold = ctHold = 0; settingsOpen = false;
   const zp = S.data.zones.find(z => z.id === id)?.piano; if (zp && zp !== S.plan) { S.plan = zp; paint(); }  // es. da link demo
   map.highlight(id);
   const sh = $('sheet'); sh.hidden = false; requestAnimationFrame(() => sh.classList.add('open'));
@@ -145,6 +145,7 @@ function closeSheet() {
   setTimeout(() => { if (!S.sel) sh.hidden = true; }, 300);
 }
 $('sh-x').onclick = $('backdrop').onclick = closeSheet;
+$('sh-gear').addEventListener('click', () => { settingsOpen = !settingsOpen; fillSheet(); });
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.sel) closeSheet(); });
 
 $('sh-zones').addEventListener('click', (e) => {
@@ -164,6 +165,10 @@ function fillSheet(first) {
   $('sh-sub').textContent = [m === 'metric' ? METRICS[S.metric].label : MODES[m].label, piano?.nome].filter(Boolean).join(' · ');
   zoneChips(m);
   for (const k of Object.keys(MODES)) $('sec-' + k).hidden = k !== m;
+  // Impostazioni (ingranaggio): oggi aperte a chi può comandare; in futuro dietro password (qui va il controllo).
+  const hasSet = m === 'air' && z.co2 != null && canCmd();
+  $('sh-gear').hidden = !hasSet; $('sh-gear').setAttribute('aria-expanded', String(hasSet && settingsOpen));
+  $('sec-cal').hidden = !(hasSet && settingsOpen);
   if (m !== 'light') { spec?.stop(); spec = null; }
   ({ metric: fillMetric, air: fillAir, light: fillLight, lights: fillLights, rele: fillRele })[m](z, first);
 }
@@ -254,15 +259,49 @@ function stat(id, m, v, word) {
 function fillAir(z) {
   stat('sh-air', 'co2', z.co2, z.co2 == null ? '' : verdictCo2(z.co2)); countTo($('air-ppm'), z.co2, 0);
   // Presenza: PIR (sensore) + persone stimate dalla CO2 (modello in occupancy.js)
-  const n = estimatePeople(z.id, z.co2);
+  // Dal Raspberry (bilancio con transitorio e taratura); la formula locale resta per la demo.
+  const n = z.persone !== undefined ? z.persone : estimatePeople(z.id, z.co2, z.vol);
   $('env-p').hidden = z.pir == null && n == null;
   const lit = n == null ? !!z.pir : n > 0, shown = n == null ? 1 : Math.max(1, Math.min(n, 10));
   $('ppl').className = 'ppl' + (lit ? '' : ' off');
   $('ppl').innerHTML = PERSON.repeat(shown) + (n > 10 ? `<em>+${n - 10}</em>` : '');
   $('pp-n').textContent = n == null ? (z.pir ? 'Sì' : 'No') : '≈ ' + n;
-  $('pp-l').textContent = n == null ? 'presenza rilevata' : (n === 1 ? 'persona stimata' : 'persone stimate') + ' dalla CO₂';
+  $('pp-l').textContent = n == null ? 'presenza rilevata' : (n === 1 ? 'persona stimata' : 'persone stimate') + ' dalla CO₂' + (z.persone_k ? ' · tarata' : '');
+  fillCal(z);
+  // Sensore CO₂ vicino a una porta o finestra (posizione dalla pianta del Manager): la lettura può essere bassa.
+  const w = z.sens_aperture;
+  $('air-warn').hidden = !w;
+  if (w) $('air-warn').textContent = `Il sensore è a ${w.d.toFixed(1).replace('.', ',')} m da ${w.t === 'porta' ? 'una porta' : 'una finestra'}: la CO₂ può essere sottostimata, e con lei le persone.`;
   $('pp-s').innerHTML = z.pir == null ? '' : `<i class="dot${z.pir ? ' on' : ''}"></i>${z.pir ? 'Movimento rilevato' : 'Nessun movimento'}`;
 }
+
+// Taratura: l'utente conta le persone presenti, il Raspberry calcola il fattore della zona (assorbe volume, ricambi e posizione del sensore).
+function fillCal(z) {
+  const can = canCmd();
+  $('cal-k').textContent = z.persone_k ? '× ' + z.persone_k.toFixed(2).replace('.', ',') : 'non tarata';
+  $('cal-reset').hidden = !z.persone_k;
+  $('cal-n').disabled = $('cal-go').disabled = $('cal-reset').disabled = !can;
+  $('cal-note').textContent = can
+    ? 'Conta le persone nella stanza e inserisci il numero: la stima si adatta a volume, ventilazione e posizione del sensore. Se sposti il sensore o cambia la ventilazione, ripeti.'
+    : 'Per tarare la stima apri il link del QR dello stand.';
+}
+
+async function sendPersone(body) {
+  if (!S.sel) return;
+  const msg = $('cal-msg'); msg.textContent = 'Invio…';
+  try {
+    if (!demo) await setPersone(session, S.sel, body);
+    msg.textContent = body.reset ? 'Taratura azzerata' : demo ? 'Taratura simulata' : 'Taratura salvata';
+    if (body.reset) $('cal-n').value = '';
+  } catch (e) { msg.textContent = e.status === 422 ? 'CO₂ troppo vicina al valore esterno: niente da tarare' : 'Taratura non riuscita'; }
+  setTimeout(() => { msg.textContent = ''; }, 3500);
+}
+$('cal-go').addEventListener('click', () => {
+  const v = $('cal-n').value;
+  if (v === '' || !Number.isInteger(+v) || +v < 0 || +v > 500) { $('cal-msg').textContent = 'Inserisci un numero intero tra 0 e 500'; return; }
+  sendPersone({ n: +v });
+});
+$('cal-reset').addEventListener('click', () => sendPersone({ reset: true }));
 
 // ---- luce: spettro e colore
 /** Colore della luce: pastiglia col colore emesso, kelvin, parola e segnaposto sulla barra calda-fredda. */

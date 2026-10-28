@@ -60,7 +60,7 @@ export function demoState() {
       id: z.id, piano: z.piano, pts: z.pts, colore: null,
       t: +(z.base[0] + wob(.8, 14)).toFixed(1), hum: +(z.base[1] + wob(3, 11)).toFixed(0), co2: Math.round(co2),
       lux: Math.round(Math.max(0, z.base[3] + wob(60, 7))), pir: Math.sin(t / 8 + i) > 0.2, cct: z.spec ?? null,
-      luci: [Math.round(3 + wob(2, 30)), 6], rele: demoReleState(z.id).items, manuale: demoReleState(z.id).manuale, dim: 80, ct: z.spec ? Math.round(z.spec / 100) * 100 : null, w: +(40 + i * 12 + wob(8, 6)).toFixed(1), wh: 1200 + i * 310,
+      luci: [Math.round(3 + wob(2, 30)), 6], sens_aperture: z.id === 'Sala conferenze' ? { t: 'porta', d: 0.9 } : null, rele: demoReleState(z.id).items, manuale: demoReleState(z.id).manuale, dim: 80, ct: z.spec ? Math.round(z.spec / 100) * 100 : null, w: +(40 + i * 12 + wob(8, 6)).toFixed(1), wh: 1200 + i * 310,
     });
     if (z.spec) {
       const cct = z.spec + wob(120, 17), [x, y] = planck(cct);

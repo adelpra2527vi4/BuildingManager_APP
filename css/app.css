@@ -67,7 +67,10 @@ h1{font:700 26px/1.05 var(--fd);letter-spacing:-.015em}
 .sheet.open .backdrop{opacity:1}.sheet.open .panel{transform:none}
 .grab{width:42px;height:4px;border-radius:9px;background:var(--line);margin:0 auto}
 .x{position:absolute;right:12px;top:12px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:20px;line-height:1;cursor:pointer}
-.panel h2{font:700 28px/1.05 var(--fd);letter-spacing:-.015em;padding-right:44px}.sub{color:var(--mut);margin-top:-8px;font:400 12px var(--fm)}
+.panel h2{font:700 28px/1.05 var(--fd);letter-spacing:-.015em;padding-right:88px}
+.gear{right:54px;display:grid;place-items:center;padding:0;color:var(--tx);cursor:pointer}
+.gear svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.gear[aria-expanded="true"]{background:var(--tx);color:var(--bg);border-color:var(--tx)}.sub{color:var(--mut);margin-top:-8px;font:400 12px var(--fm)}
 .viz{flex:none}
 .viz{--mut:#8da2ba;--line:rgba(255,255,255,.12);--card:rgba(255,255,255,.06);color:#eaf1fb;border:1px solid #0c1a12;border-radius:20px;background:#0A1510;overflow:hidden;position:relative}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:none}
@@ -154,3 +157,12 @@ h1{font:700 26px/1.05 var(--fd);letter-spacing:-.015em}
 .seg3 button{border:0;background:none;padding:8px 12px;font:500 14px var(--fm);cursor:pointer;color:var(--mut)}
 .seg3 button+button{border-left:1px solid var(--line)}
 .seg3 button[aria-pressed="true"]{background:var(--acc);color:var(--acc-tx);font-weight:600}
+
+/* taratura stima persone */
+.cal-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cal-row label{flex-basis:100%;color:var(--mut);font-size:13px}
+#cal-n{width:96px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--tx);font:500 16px var(--fm)}
+.cal-row button{flex:none;min-width:0;padding:10px 16px}
+
+/* avviso sensore vicino ad aperture */
+.warn{grid-column:1/-1;margin:0;padding:10px 12px;border-radius:14px;border:1px solid var(--acc);background:rgba(255,122,26,.12);font-size:13px;line-height:1.4}

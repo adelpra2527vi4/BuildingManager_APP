@@ -5,7 +5,8 @@
 const CO2_EXT = 420;            // ppm all'aperto
 const G = 0.005 / 1000;         // m3/s di CO2 per persona seduta (~18 L/h)
 const DEFAULT = { vol: 60, ach: 3 };
-// Taratura per zona (nome zona esatto): volume in m3 e ricambi d'aria orari.
+// Taratura per zona (nome zona esatto): volume in m3 e ricambi d'aria orari. Il volume vero arriva dal Manager
+// (z.vol, impostazioni temperatura della zona) e ha la precedenza; qui resta il valore di riserva.
 export const ZONE_CFG = {
   'Sala conferenze': { vol: 120, ach: 4 },
   'Open space': { vol: 220, ach: 3 },
@@ -14,10 +15,11 @@ export const ZONE_CFG = {
   'Nuova zona 1': { vol: 60, ach: 3 },
 };
 
-/** Persone stimate (intero >= 0) oppure null se manca la CO2. */
-export function estimatePeople(zoneId, co2) {
+/** Persone stimate (intero >= 0) oppure null se manca la CO2.
+ *  volume: m3 della zona dal Manager (se > 0 ha la precedenza sulla tabella; i ricambi d'aria restano quelli della tabella). */
+export function estimatePeople(zoneId, co2, volume) {
   if (co2 == null) return null;
-  const { vol, ach } = ZONE_CFG[zoneId] || DEFAULT;
+  const cfg = ZONE_CFG[zoneId] || DEFAULT, vol = volume > 0 ? volume : cfg.vol, ach = cfg.ach;
   const q = vol * ach / 3600;
   return Math.max(0, Math.round((co2 - CO2_EXT) * 1e-6 * q / G));
 }
