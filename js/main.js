@@ -16,7 +16,7 @@ function gate(title, text) {
   $('gate-t').textContent = title; $('gate-p').textContent = text;
 }
 if (!demo && !session) {
-  gate('Indirizzo non configurato', 'Apri il link con l'indirizzo del Building Manager (#a=https://host.ts.net).');
+  gate('Indirizzo non configurato', "Apri il link con l'indirizzo del Building Manager (#a=https://host.ts.net).");
 } else {
   $('app').hidden = false;
 }
