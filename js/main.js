@@ -92,7 +92,7 @@ async function paint() {
   // I due pulsanti aprono la scheda di una zona che abbia il dato: senza, restano spenti.
   const has = { air: d.zones.some(z => z.co2 != null), spec: d.zones.some(z => d.spectra[z.id]) };
   for (const b of $('showcase').children) { b.disabled = !has[b.dataset.show]; b.title = b.disabled ? 'Dato non disponibile' : ''; }
-  $('foot').textContent = (demo ? 'Dati simulati · ' : '') + 'Aggiornamento in tempo reale';
+  $('foot').textContent = (demo ? 'Dati simulati · ' : '') + 'Aggiornato alle ' + new Date().toLocaleTimeString('it-IT');
   if (S.sel) fillSheet();
 }
 
@@ -134,12 +134,18 @@ function closeSheet() {
 $('sh-x').onclick = $('backdrop').onclick = closeSheet;
 
 // Comandi luci: solo con un token (link dal QR); senza, i pulsanti restano nascosti.
-$('sh-act').addEventListener('click', async (e) => {
-  const b = e.target.closest('button'); if (!b || !S.sel) return;
-  const msg = $('act-msg'); b.disabled = true; msg.textContent = 'Invio…';
-  try { const r = await setLights(session, S.sel, b.dataset.on === '1'); msg.textContent = r.n ? 'Comando inviato' : 'Nessuna luce in questa zona'; }
+// Dimmer: il numero segue il dito, il comando parte al rilascio. Per ~6 s dopo l'invio lo slider non
+// viene riallineato ai dati (le lampade impiegano qualche secondo a riportare il nuovo livello).
+let dimHold = 0;
+const dimLabel = (v) => (+v ? v + '%' : 'Spente');
+$('dim').addEventListener('input', (e) => { dimHold = Infinity; $('dim-v').textContent = dimLabel(e.target.value); });
+$('dim').addEventListener('change', async (e) => {
+  if (!S.sel) return;
+  const msg = $('act-msg'); msg.textContent = 'Invio…';
+  try { const r = await setLights(session, S.sel, +e.target.value); msg.textContent = r.n ? 'Comando inviato' : 'Nessuna luce in questa zona'; }
   catch (err) { msg.textContent = 'Comando non riuscito'; }
-  setTimeout(() => { b.disabled = false; msg.textContent = ''; }, 2500);
+  dimHold = Date.now() + 6000;
+  setTimeout(() => { msg.textContent = ''; }, 2500);
 });
 
 function fillEnv(z) {
@@ -152,7 +158,7 @@ function fillEnv(z) {
   pres.set(z.pir, n); pres.start();
   $('pp-n').textContent = n == null ? (z.pir ? 'Sì' : 'No') : '≈ ' + n;
   $('pp-l').textContent = n == null ? 'presenza rilevata' : (n === 1 ? 'persona stimata' : 'persone stimate') + ' dalla CO₂';
-  $('pp-s').textContent = z.pir == null ? '' : z.pir ? 'Movimento rilevato' : 'Nessun movimento';
+  $('pp-s').innerHTML = z.pir == null ? '' : `<i class="dot${z.pir ? ' on' : ''}"></i>${z.pir ? 'Movimento rilevato' : 'Nessun movimento'}`;
   $('pp-s').style.color = z.pir ? '#3cdc8c' : 'var(--mut)';
 }
 
@@ -169,6 +175,7 @@ function fillSheet(first) {
   $('sh-tiles').querySelector('[data-k="luci"] b').textContent = z.luci[1] ? `${z.luci[0]} / ${z.luci[1]}` : '—';
 
   $('sh-act').hidden = demo || !session?.t || !z.luci[1];
+  if (Date.now() > dimHold) { const d = z.dim ?? (z.luci[0] ? 100 : 0); $('dim').value = d; $('dim-v').textContent = dimLabel(d); }
   $('sh-air').hidden = z.co2 == null;
   if (z.co2 != null) {
     air.set(z.co2); air.start(); countTo($('air-ppm'), z.co2, 0);

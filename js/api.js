@@ -26,7 +26,7 @@ export const expiresAt = (s) => s.t ? Number(s.t.split('.')[1]) * 1000 : Infinit
 export const clearSession = () => { try { localStorage.removeItem(KEY); } catch { /* ok */ } };
 
 async function call(s, path) {
-  const r = await fetch(s.a + path, { headers: s.t ? { Authorization: 'Bearer ' + s.t } : {}, cache: 'no-store' });
+  const r = await fetch(s.a + path, { headers: s.t ? { Authorization: 'Bearer ' + s.t } : {}, cache: 'no-store', signal: AbortSignal.timeout(6000) });
   if (r.status === 401) throw Object.assign(new Error('auth'), { auth: true });
   if (!r.ok) throw new Error('http ' + r.status);
   return r;
@@ -42,11 +42,11 @@ export async function getPlanUrl(s, id) {
   return planCache.get(id);
 }
 
-/** Accende/spegne le luci di una zona. Richiede il token (sessione da QR). */
-export async function setLights(s, zona, on) {
+/** Dimmer delle luci di una zona (pct 0..100, 0 = spente). Richiede il token (sessione da QR). */
+export async function setLights(s, zona, pct) {
   const r = await fetch(s.a + '/fair/api/zone/' + encodeURIComponent(zona) + '/luci', {
     method: 'POST', headers: { Authorization: 'Bearer ' + s.t, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ on }), cache: 'no-store',
+    body: JSON.stringify({ pct }), cache: 'no-store',
   });
   if (!r.ok) throw new Error('http ' + r.status);
   return r.json();

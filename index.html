@@ -42,7 +42,7 @@
     <button class="x" id="sh-x" aria-label="Chiudi">×</button>
     <h2 id="sh-title"></h2><p class="sub" id="sh-sub"></p>
     <div class="tiles" id="sh-tiles"></div>
-    <div class="act" id="sh-act" hidden><button data-on="1">Accendi luci</button><button data-on="0">Spegni luci</button><small id="act-msg"></small></div>
+    <div class="act" id="sh-act" hidden><div class="dh"><span>Luci</span><b id="dim-v">—</b></div><input type="range" id="dim" min="0" max="100" step="5" value="0" aria-label="Luminosità luci"><small id="act-msg"></small></div>
     <div class="env" id="sh-env">
       <section class="viz envc" id="env-t"><canvas></canvas><div class="over side"><b id="env-tv">—</b><span>°C temperatura</span></div></section>
       <section class="viz envc" id="env-h"><canvas></canvas><div class="over side"><b id="env-hv">—</b><span>% umidità</span></div></section>

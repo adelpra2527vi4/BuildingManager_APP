@@ -42,70 +42,90 @@ export class ThermoFx extends Fx {
   }
 }
 
-/** Goccia: si riempie con l'umidita', due onde sovrapposte, riflesso. */
+/** Goccia: sagoma classica (punta in alto, base tonda) che si riempie con l'umidita', onde, bollicine e riflesso. */
 export class DropFx extends Fx {
-  constructor(canvas) { super(canvas); this.v = 45; this.cur = 45; }
+  constructor(canvas) {
+    super(canvas); this.v = 45; this.cur = 45;
+    this.bub = Array.from({ length: 9 }, () => ({ y: Math.random(), x: Math.random() * 2 - 1, s: .5 + Math.random() }));
+  }
   set(v) { this.v = v; }
   draw(t, dt) {
     const g = this.g, W = this.w, H = this.h; this.cur += (this.v - this.cur) * Math.min(1, dt * 2);
-    const cx = W * .27, s = Math.min(H * .42, 62), cy = H * .56;
-    const k = clamp(this.cur / 100, 0, 1), col = metricColor('hum', this.cur);
+    const s = Math.min((H - 28) / 3, 52), cx = W * .27, cy = (H - 3 * s) / 2 + 2 * s; // altezza totale 3s: punta a cy-2s, fondo a cy+s
+    const k = clamp(this.cur / 100, 0, 1), col = metricColor('hum', this.cur), sp = reduced ? 0 : 1;
     const path = () => {
-      g.beginPath(); g.moveTo(cx, cy - s * 1.25);
-      g.bezierCurveTo(cx + s * .15, cy - s * .75, cx + s, cy - s * .2, cx + s, cy + s * .25);
-      g.bezierCurveTo(cx + s, cy + s * .85, cx + s * .55, cy + s * 1.05, cx, cy + s * 1.05);
-      g.bezierCurveTo(cx - s * .55, cy + s * 1.05, cx - s, cy + s * .85, cx - s, cy + s * .25);
-      g.bezierCurveTo(cx - s, cy - s * .2, cx - s * .15, cy - s * .75, cx, cy - s * 1.25); g.closePath();
+      g.beginPath(); g.moveTo(cx, cy - 2 * s);
+      g.quadraticCurveTo(cx + .30 * s, cy - 1.05 * s, cx + .866 * s, cy - .5 * s);
+      g.arc(cx, cy, s, -Math.PI / 6, Math.PI + Math.PI / 6, false);
+      g.quadraticCurveTo(cx - .30 * s, cy - 1.05 * s, cx, cy - 2 * s); g.closePath();
     };
     g.clearRect(0, 0, W, H);
     const halo = g.createRadialGradient(cx, cy, 0, cx, cy, H); halo.addColorStop(0, rgb(col, .22)); halo.addColorStop(1, rgb(col, 0));
     g.fillStyle = halo; g.fillRect(0, 0, W, H);
+    // vetro
     g.save(); path(); g.fillStyle = 'rgba(255,255,255,.06)'; g.fill(); g.clip();
-    const y0 = cy + s * 1.05 - (s * 2.3) * k, sp = reduced ? 0 : 1;
-    for (const [amp, f, ph, a] of [[4, 2.2, 0, .55], [3, 3.1, 1.7, .4]]) {
-      g.fillStyle = rgb(col, a); g.beginPath(); g.moveTo(cx - s, cy + s * 1.2);
-      for (let x = cx - s; x <= cx + s; x += 3) g.lineTo(x, y0 + Math.sin((x - cx) / s * f * 2 + t * (1.4 + ph * .2) * sp + ph) * amp);
-      g.lineTo(cx + s, cy + s * 1.2); g.closePath(); g.fill();
+    // acqua: dal fondo (cy+s) verso la punta (cy-2s)
+    const y0 = cy + s - 3 * s * k;
+    const grad = g.createLinearGradient(0, y0, 0, cy + s); grad.addColorStop(0, rgb(col, .9)); grad.addColorStop(1, rgb(col, .55));
+    for (const [amp, f, ph, a] of [[3.5, 2.4, 0, .55], [2.5, 3.3, 1.7, .4]]) {
+      g.fillStyle = a > .5 ? grad : rgb(col, a); g.beginPath(); g.moveTo(cx - s - 2, cy + s + 2);
+      for (let x = cx - s - 2; x <= cx + s + 2; x += 3) g.lineTo(x, y0 + Math.sin((x - cx) / s * f * 2 + t * (1.5 + ph * .2) * sp + ph) * amp);
+      g.lineTo(cx + s + 2, cy + s + 2); g.closePath(); g.fill();
+    }
+    for (const b of this.bub) { // bollicine
+      b.y -= dt * (.10 + .08 * k) * b.s * sp; if (b.y < 0) { b.y = 1; b.x = Math.random() * 2 - 1; }
+      const by = cy + s - (cy + s - y0) * (1 - b.y);
+      if (by < y0 + 4) continue;
+      g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.arc(cx + b.x * s * .6, by, 1.5 * b.s, 0, 6.28); g.fill();
     }
     g.restore();
-    path(); g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1.6; g.stroke();
-    g.fillStyle = 'rgba(255,255,255,.45)'; g.beginPath(); g.ellipse(cx - s * .45, cy - s * .05, 3, 9, .35, 0, 6.28); g.fill();
+    path(); g.strokeStyle = 'rgba(255,255,255,.4)'; g.lineWidth = 1.6; g.stroke();
+    // riflesso a sinistra, sul bordo della base
+    g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 3; g.lineCap = 'round';
+    g.beginPath(); g.arc(cx, cy, s * .78, Math.PI * .72, Math.PI * .95); g.stroke(); g.lineCap = 'butt';
   }
 }
 
-/** Presenza: radar che pulsa col PIR e, a destra, le persone stimate dalla CO2 (icone che entrano/escono). */
+/** Presenza: a destra figure umane (una per persona stimata dalla CO2; senza CO2 una sola, accesa dal PIR).
+ *  Il PIR e' mostrato anche nel testo a sinistra con un pallino che pulsa. */
 export class PresenceFx extends Fx {
   constructor(canvas) { super(canvas); this.pir = false; this.n = null; this.icons = []; this.act = 0; }
   set(pir, n) {
     this.pir = !!pir; this.n = n;
-    const want = n == null ? 0 : Math.min(n, 24);
+    const want = n == null ? 0 : Math.min(n, 30);
     while (this.icons.length < want) this.icons.push({ k: 0, tgt: 1, ph: Math.random() * 6.28 });
     this.icons.forEach((ic, i) => { ic.tgt = i < want ? 1 : 0; });
   }
+  person(x, y, s, fill, line) { // y = piedi
+    const g = this.g;
+    g.beginPath(); g.arc(x, y - s * 1.55, s * .36, 0, 6.28);
+    g.roundRect(x - s * .62, y - s * 1.1, s * 1.24, s * 1.1, [s * .6, s * .6, s * .12, s * .12]);
+    if (fill) { g.fillStyle = fill; g.fill(); }
+    if (line) { g.strokeStyle = line; g.lineWidth = 1.6; g.stroke(); }
+  }
   draw(t, dt) {
-    const g = this.g, W = this.w, H = this.h, col = this.pir ? [60, 220, 140] : [120, 140, 170];
+    const g = this.g, W = this.w, H = this.h, x0 = W * .46, aw = W - x0 - 8, ah = H - 16;
     this.act += ((this.pir ? 1 : 0) - this.act) * Math.min(1, dt * 3);
     g.clearRect(0, 0, W, H);
-    const cx = W * .22, cy = H / 2, R = Math.min(W * .2, H * .4);
-    for (let i = 0; i < 3; i++) {
-      const p = ((t * (this.pir ? .55 : .15) + i / 3) % 1);
-      g.strokeStyle = rgb(col, (1 - p) * (.15 + .5 * this.act)); g.lineWidth = 2;
-      g.beginPath(); g.arc(cx, cy, R * (.25 + p * .85), 0, 6.28); g.stroke();
+    const green = [60, 220, 140], sp = reduced ? 0 : 1;
+    const aura = g.createRadialGradient(x0 + aw / 2, H / 2, 0, x0 + aw / 2, H / 2, Math.max(aw, ah) * .7);
+    aura.addColorStop(0, rgb(green, .22 * this.act)); aura.addColorStop(1, rgb(green, 0)); g.fillStyle = aura; g.fillRect(x0 - 10, 0, aw + 20, H);
+    if (this.n == null || this.n === 0) { // una sola figura: accesa dal PIR, spenta senza movimento
+      const s = Math.min(aw * .5, ah * .45), cx = x0 + aw / 2, fy = H / 2 + s * .8;
+      if (this.act > .02) for (let i = 0; i < 2; i++) {
+        const p = (t * .5 * sp + i / 2) % 1; g.strokeStyle = rgb(green, (1 - p) * .35 * this.act); g.lineWidth = 2;
+        g.beginPath(); g.arc(cx, fy - s * .8, s * (.9 + p * 1.1), 0, 6.28); g.stroke();
+      }
+      this.person(cx, fy, s, this.act > .5 ? rgb(green, .35 + .6 * this.act) : null, this.act > .5 ? rgb(green, .9) : 'rgba(255,255,255,.28)');
+      return;
     }
-    const core = g.createRadialGradient(cx, cy, 0, cx, cy, R * .35); core.addColorStop(0, rgb(col, .9)); core.addColorStop(1, rgb(col, 0.1));
-    g.fillStyle = core; g.beginPath(); g.arc(cx, cy, R * (.28 + .04 * Math.sin(t * 4) * this.act), 0, 6.28); g.fill();
-    if (!reduced && this.pir) { // sweep
-      const a = t * 2.4; g.fillStyle = rgb(col, .18); g.beginPath(); g.moveTo(cx, cy); g.arc(cx, cy, R * 1.1, a, a + .6); g.closePath(); g.fill();
-    }
-    // persone: griglia a destra, fino a 24
-    const x0 = W * .46, cols = 6, cw = (W - x0 - 10) / cols, rh = Math.min(cw * 1.5, (H - 16) / 4);
+    const cnt = this.icons.length, cols = Math.max(1, Math.min(cnt, Math.ceil(Math.sqrt(cnt * aw / ah * 1.6))));
+    const rows = Math.ceil(cnt / cols), cw = aw / cols, rh = ah / rows, s = Math.min(cw * .5, rh * .55);
     this.icons.forEach((ic, i) => {
       ic.k += (ic.tgt - ic.k) * Math.min(1, dt * 5);
       if (ic.k < .02) return;
-      const px = x0 + (i % cols) * cw + cw / 2, py = 10 + Math.floor(i / cols) * rh + rh * .7 + Math.sin(t * 1.6 + ic.ph) * 1.5, s = Math.min(cw, rh) * .38 * ic.k;
-      g.fillStyle = rgb([255, 214, 120], .95 * ic.k);
-      g.beginPath(); g.arc(px, py - s * 1.1, s * .55, 0, 6.28); g.fill();
-      g.beginPath(); g.roundRect(px - s * .8, py - s * .4, s * 1.6, s * 1.5, s * .6); g.fill();
+      const px = x0 + (i % cols) * cw + cw / 2, fy = 8 + Math.floor(i / cols) * rh + rh * .5 + s * .8 - Math.abs(Math.sin(t * 2 + ic.ph)) * 2.5 * this.act * sp, k = ic.k;
+      this.person(px, fy, s * k, rgb([255, 214, 120], .95 * k), null);
     });
   }
 }
