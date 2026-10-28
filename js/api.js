@@ -10,7 +10,7 @@ export function initSession() {
       // Solo HTTPS su un host Tailscale: un link manipolato non puo' puntare altrove.
       // TEMP test senza login: accesso libero (token vuoto) anche a http su IP di rete locale.
       const lan = u.protocol === 'http:' && /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(u.hostname);
-      if ((u.protocol === 'https:' && u.hostname.endsWith('.ts.net') && h.get('t')) || (lan && !h.get('t')))
+      if ((u.protocol === 'https:' && u.hostname.endsWith('.ts.net')) || (lan && !h.get('t')))
         localStorage.setItem(KEY, JSON.stringify({ t: h.get('t') || '', a: u.origin }));
     } catch { /* URL non valido: ignora */ }
     history.replaceState(null, '', location.pathname + location.search);

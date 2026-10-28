@@ -16,7 +16,7 @@ function gate(title, text) {
   $('gate-t').textContent = title; $('gate-p').textContent = text;
 }
 if (!demo && !session) {
-  gate('Inquadra il QR allo stand', 'Questa vista live è riservata ai visitatori. Scansiona il QR code per entrare.');
+  gate('Indirizzo non configurato', 'Apri il link con l'indirizzo del Building Manager (#a=https://host.ts.net).');
 } else {
   $('app').hidden = false;
 }
