@@ -43,8 +43,8 @@ Sorgenti lato Pi: `api_zone_layers`, `_planimetrie_list`, `_spettro_nodes` (zone
 - Fix installazione pulita: senza codice cliente ogni pagina dava 500.
 
 ## Da fare (prossimo passo in alto)
-1. **Commit/push di `fair_api.py`, `setup_fair.sh`, `deploy/`, `Manager.py`, `README.md`, `.gitignore` nella repo Building_Manager** (il Pi della fiera usa quella repo; non ancora fatto).
-2. Sul Pi della fiera: `./setup_fair.sh` (Tailscale + Funnel su `/fair`), impostare `FAIR_PUBLIC_URL` in `fair.env`, riavviare `hvac.service`.
+1. ~~Commit/push lato Building_Manager~~ fatto (fair_api, setup_fair, deploy, dimmer luci).
+2. (In attesa: Pi fiera e Tailscale non ancora pronti; nel frattempo uso in LAN, vedi AVVIO_RAPIDO.md.) Sul Pi della fiera: `./setup_fair.sh` (Tailscale + Funnel su `/fair`), impostare `FAIR_PUBLIC_URL` in `fair.env`, riavviare `hvac.service`.
 3. Abilitare HTTPS e attributo "funnel" nel pannello admin Tailscale.
 4. Prova end-to-end da smartphone fuori dalla LAN con un QR vero.
 5. Verificare lo spettro con sensori AS7341 reali (nel Pi di test non ce ne sono: formato `spec` non provato dal vivo).

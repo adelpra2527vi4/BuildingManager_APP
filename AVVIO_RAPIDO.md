@@ -3,7 +3,7 @@
 Istruzioni per far partire la web app su un PC nella stessa rete del Raspberry. Pensate per essere eseguite da un assistente AI o da uno sviluppatore, senza altro contesto.
 
 ## Cos'è
-Sito statico (HTML + JS, nessuna build, nessuna dipendenza) che mostra in tempo reale i dati del Building Manager: pianta con zone colorate, temperatura, umidità, CO₂, persone stimate dalla CO₂, presenza (PIR), spettro della luce e dimmer delle luci. I dati arrivano dal Raspberry che esegue il Manager (repo `adelpra2527vi4/Building_Manager`, file `fair_api.py`).
+Sito statico (HTML + JS, nessuna build, nessuna dipendenza) che mostra in tempo reale i dati del Building Manager: pianta con zone colorate, temperatura, umidità, CO₂, persone stimate dalla CO₂, presenza (PIR), spettro della luce e dimmer delle luci. I dati arrivano dal Raspberry che esegue il Manager ([repo Building_Manager](https://github.com/adelpra2527vi4/Building_Manager), file `fair_api.py`; checklist installazione nel suo README).
 
 ```
 browser (PC/telefono) -> questa cartella servita da un web server statico

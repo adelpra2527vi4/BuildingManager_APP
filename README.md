@@ -8,7 +8,7 @@ Web app statica (HTML/CSS/JS, nessuna build) per vedere da smartphone la mappa d
 
 1. Dal pannello `http://<ip-raspberry>:5000/fair-admin/` (solo rete locale) si genera un **QR** con un token firmato a scadenza.
 2. Il QR contiene `https://<pages>/#t=TOKEN&a=https://<host>.ts.net`: il token sta nel frammento, quindi non finisce nei log dei server.
-3. La web app lo salva, ripulisce l'URL e chiama `/fair/api/*` con `Authorization: Bearer`. Senza token valido mostra "Inquadra il QR".
+3. La web app lo salva, ripulisce l'URL e chiama `/fair/api/*` con `Authorization: Bearer`. Senza token valido le letture dipendono dal Pi: con `FAIR_OPEN=1` (test in LAN) si vede tutto, i comandi (dimmer luci) richiedono sempre il token.
 4. "Revoca tutti" nel pannello cambia il segreto e invalida ogni QR emesso.
 
 Limite: chi riceve il link lo può inoltrare finché il token non scade. Per una fiera è sufficiente; la scadenza è nel pannello (1–72 h).
@@ -23,4 +23,4 @@ Push su `main` → il workflow `.github/workflows/pages.yml` pubblica. In Settin
 
 ## Lato Raspberry (CORS e Funnel)
 
-Vedi `setup_fair.sh` in `Manager-raspi`. In breve: `FAIR_ORIGINS` = origin di Pages (es. `https://utente.github.io`), Funnel solo su `/fair`.
+Repo server: [Building_Manager](https://github.com/adelpra2527vi4/Building_Manager) (`fair_api.py`, `setup_fair.sh`, checklist fiera nel suo README). Avvio in LAN senza Tailscale: [AVVIO_RAPIDO.md](AVVIO_RAPIDO.md). In breve: `FAIR_ORIGINS` = origin di Pages (es. `https://utente.github.io`), Funnel solo su `/fair`.
