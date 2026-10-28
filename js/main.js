@@ -1,5 +1,7 @@
-import { initSession, getState, getPlanUrl, clearSession, expiresAt } from './api.js';
+import { initSession, getState, getPlanUrl, clearSession, expiresAt, setLights } from './api.js';
 import { demoState } from './demo.js';
+import { ThermoFx, DropFx, PresenceFx } from './fx2.js';
+import { estimatePeople } from './occupancy.js';
 import { createMap } from './map.js';
 import { AirField, SpectrumChart, ChromaChart, countTo, sparkline } from './fx.js';
 import { METRICS, metricColor, rgb, verdictCo2 } from './scales.js';
@@ -87,6 +89,9 @@ async function paint() {
   const t = d.totali;
   $('totals').innerHTML = `<span><b>${Math.round(t.w)}</b> W</span><span><b>${t.luci[0]}</b>/${t.luci[1]} luci</span>`;
   $('showcase').hidden = false;
+  // I due pulsanti aprono la scheda di una zona che abbia il dato: senza, restano spenti.
+  const has = { air: d.zones.some(z => z.co2 != null), spec: d.zones.some(z => d.spectra[z.id]) };
+  for (const b of $('showcase').children) { b.disabled = !has[b.dataset.show]; b.title = b.disabled ? 'Dato non disponibile' : ''; }
   $('foot').textContent = (demo ? 'Dati simulati · ' : '') + 'Aggiornamento in tempo reale';
   if (S.sel) fillSheet();
 }
@@ -101,16 +106,19 @@ function legend() {
 const esc = (s) => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 // ---------------------------------------------------------------- scheda zona
-let air = null, spec = null, chroma = null;
-const TILES = [['t', 'Temperatura', '°C', 1], ['hum', 'Umidità', '%', 0], ['co2', 'CO₂', 'ppm', 0], ['lux', 'Luce', 'lx', 0]];
+let air = null, spec = null, chroma = null, thermo = null, drop = null, pres = null;
+const TILES = [['co2', 'CO₂', 'ppm', 0], ['lux', 'Luce', 'lx', 0]];
 
 function openSheet(id, focus) {
   S.sel = id; map.highlight(id);
   const sh = $('sheet'); sh.hidden = false; requestAnimationFrame(() => sh.classList.add('open'));
   document.body.classList.add('noscroll');
   $('sh-tiles').innerHTML = TILES.map(([k, l, u]) => `<div class="tile" data-k="${k}"><small>${l}</small><div><b>—</b><u>${u}</u></div><svg viewBox="0 0 100 20" preserveAspectRatio="none"></svg></div>`).join('')
-    + '<div class="tile" data-k="pir"><small>Presenza</small><div><b>—</b></div></div><div class="tile" data-k="luci"><small>Luci accese</small><div><b>—</b></div></div>';
+    + '<div class="tile" data-k="luci"><small>Luci accese</small><div><b>—</b></div></div>';
   air ||= new AirField($('sh-air').querySelector('canvas'));
+  thermo ||= new ThermoFx($('env-t').querySelector('canvas'));
+  drop ||= new DropFx($('env-h').querySelector('canvas'));
+  pres ||= new PresenceFx($('env-p').querySelector('canvas'));
   spec ||= new SpectrumChart($('sh-spec').querySelector('.spc'));
   chroma ||= new ChromaChart($('sh-spec').querySelector('.chr'));
   fillSheet(true);
@@ -120,10 +128,33 @@ function openSheet(id, focus) {
 function closeSheet() {
   S.sel = null; map.highlight(null);
   const sh = $('sheet'); sh.classList.remove('open'); document.body.classList.remove('noscroll');
-  for (const f of [air, spec, chroma]) f?.stop(); air = spec = chroma = null;
+  for (const f of [air, spec, chroma, thermo, drop, pres]) f?.stop(); air = spec = chroma = thermo = drop = pres = null;
   setTimeout(() => { if (!S.sel) sh.hidden = true; }, 300);
 }
 $('sh-x').onclick = $('backdrop').onclick = closeSheet;
+
+// Comandi luci: solo con un token (link dal QR); senza, i pulsanti restano nascosti.
+$('sh-act').addEventListener('click', async (e) => {
+  const b = e.target.closest('button'); if (!b || !S.sel) return;
+  const msg = $('act-msg'); b.disabled = true; msg.textContent = 'Invio…';
+  try { const r = await setLights(session, S.sel, b.dataset.on === '1'); msg.textContent = r.n ? 'Comando inviato' : 'Nessuna luce in questa zona'; }
+  catch (err) { msg.textContent = 'Comando non riuscito'; }
+  setTimeout(() => { b.disabled = false; msg.textContent = ''; }, 2500);
+});
+
+function fillEnv(z) {
+  $('env-t').hidden = z.t == null; $('env-h').hidden = z.hum == null;
+  if (z.t != null) { thermo.set(z.t); thermo.start(); countTo($('env-tv'), z.t, 1); }
+  if (z.hum != null) { drop.set(z.hum); drop.start(); countTo($('env-hv'), z.hum, 0); }
+  // Presenza: PIR (sensore) + persone stimate dalla CO2 (modello in occupancy.js)
+  const n = estimatePeople(z.id, z.co2);
+  $('env-p').hidden = z.pir == null && n == null;
+  pres.set(z.pir, n); pres.start();
+  $('pp-n').textContent = n == null ? (z.pir ? 'Sì' : 'No') : '≈ ' + n;
+  $('pp-l').textContent = n == null ? 'presenza rilevata' : (n === 1 ? 'persona stimata' : 'persone stimate') + ' dalla CO₂';
+  $('pp-s').textContent = z.pir == null ? '' : z.pir ? 'Movimento rilevato' : 'Nessun movimento';
+  $('pp-s').style.color = z.pir ? '#3cdc8c' : 'var(--mut)';
+}
 
 function fillSheet(first) {
   const z = S.data?.zones.find(z => z.id === S.sel); if (!z || !air) return;
@@ -134,9 +165,10 @@ function fillSheet(first) {
     countTo(el.querySelector('b'), v, dec);
     sparkline(el.querySelector('svg'), S.hist[z.id]?.[k] || [], v != null ? rgb(metricColor(k, v)) : '#667');
   }
-  $('sh-tiles').querySelector('[data-k="pir"] b').textContent = z.pir == null ? '—' : z.pir ? 'Rilevata' : 'Nessuna';
+  fillEnv(z);
   $('sh-tiles').querySelector('[data-k="luci"] b').textContent = z.luci[1] ? `${z.luci[0]} / ${z.luci[1]}` : '—';
 
+  $('sh-act').hidden = demo || !session?.t || !z.luci[1];
   $('sh-air').hidden = z.co2 == null;
   if (z.co2 != null) {
     air.set(z.co2); air.start(); countTo($('air-ppm'), z.co2, 0);

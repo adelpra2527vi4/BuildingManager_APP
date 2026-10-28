@@ -10,7 +10,7 @@ export function initSession() {
       // Solo HTTPS su un host Tailscale: un link manipolato non puo' puntare altrove.
       // TEMP test senza login: accesso libero (token vuoto) anche a http su IP di rete locale.
       const lan = u.protocol === 'http:' && /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(u.hostname);
-      if ((u.protocol === 'https:' && u.hostname.endsWith('.ts.net')) || (lan && !h.get('t')))
+      if ((u.protocol === 'https:' && u.hostname.endsWith('.ts.net')) || lan)
         localStorage.setItem(KEY, JSON.stringify({ t: h.get('t') || '', a: u.origin }));
     } catch { /* URL non valido: ignora */ }
     history.replaceState(null, '', location.pathname + location.search);
@@ -40,4 +40,14 @@ export async function getPlanUrl(s, id) {
   if (!planCache.has(id))
     planCache.set(id, call(s, '/fair/plan/' + encodeURIComponent(id)).then(r => r.blob()).then(b => URL.createObjectURL(b)));
   return planCache.get(id);
+}
+
+/** Accende/spegne le luci di una zona. Richiede il token (sessione da QR). */
+export async function setLights(s, zona, on) {
+  const r = await fetch(s.a + '/fair/api/zone/' + encodeURIComponent(zona) + '/luci', {
+    method: 'POST', headers: { Authorization: 'Bearer ' + s.t, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ on }), cache: 'no-store',
+  });
+  if (!r.ok) throw new Error('http ' + r.status);
+  return r.json();
 }

@@ -5,7 +5,7 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
 /** Base: canvas a DPI corretto con ciclo requestAnimationFrame fermato quando non visibile. */
-class Fx {
+export class Fx {
   constructor(canvas) {
     this.c = canvas; this.g = canvas.getContext('2d'); this.t0 = performance.now(); this.raf = 0;
     this.ro = new ResizeObserver(() => this.resize()); this.ro.observe(canvas);

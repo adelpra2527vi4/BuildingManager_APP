@@ -42,6 +42,12 @@
     <button class="x" id="sh-x" aria-label="Chiudi">×</button>
     <h2 id="sh-title"></h2><p class="sub" id="sh-sub"></p>
     <div class="tiles" id="sh-tiles"></div>
+    <div class="act" id="sh-act" hidden><button data-on="1">Accendi luci</button><button data-on="0">Spegni luci</button><small id="act-msg"></small></div>
+    <div class="env" id="sh-env">
+      <section class="viz envc" id="env-t"><canvas></canvas><div class="over side"><b id="env-tv">—</b><span>°C temperatura</span></div></section>
+      <section class="viz envc" id="env-h"><canvas></canvas><div class="over side"><b id="env-hv">—</b><span>% umidità</span></div></section>
+      <section class="viz envc wide" id="env-p"><canvas></canvas><div class="pp"><b id="pp-n">—</b><span id="pp-l"></span><em id="pp-s"></em></div></section>
+    </div>
     <section class="viz air" id="sh-air">
       <canvas></canvas>
       <div class="over"><b id="air-ppm">—</b><span>ppm CO₂</span><em id="air-v"></em></div>

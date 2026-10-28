@@ -91,3 +91,17 @@ h1{font-size:22px;font-weight:700;letter-spacing:-.01em}
 
 @media (min-width:700px){.tiles{grid-template-columns:repeat(3,1fr)}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.act{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+.act button{flex:1;min-width:120px;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:inherit;font:inherit;font-weight:600}
+.act button:active{transform:scale(.97)}
+.act button:disabled,.showcase button:disabled{opacity:.4}
+.act small{flex-basis:100%;opacity:.7}
+
+.env{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:none}
+.envc canvas{display:block;width:100%;height:170px}
+.envc.wide{grid-column:1/-1}.envc.wide canvas{height:150px}
+.over.side{left:46%;align-items:flex-start;justify-content:center}
+.over.side b{font-size:38px}.over.side span{font-size:12px}
+.pp{position:absolute;left:0;top:0;bottom:0;width:44%;display:flex;flex-direction:column;justify-content:flex-end;padding:0 0 12px 14px;pointer-events:none;text-shadow:0 2px 12px #000}
+.pp b{font-size:34px;font-weight:800;line-height:1}.pp span{color:var(--mut);font-size:12px}.pp em{font-style:normal;font-weight:600;font-size:13px;margin-top:2px}
