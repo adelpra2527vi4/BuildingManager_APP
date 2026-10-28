@@ -31,8 +31,8 @@ Sorgenti lato Pi: `api_zone_layers`, `_planimetrie_list`, `_spettro_nodes` (zone
 
 ## File
 - `index.html`, `css/app.css`
-- `js/main.js` stato, polling, scheda zona · `js/api.js` sessione/token · `js/map.js` pianta+poligoni
-- `js/fx.js` AirField (CO₂), SpectrumChart, ChromaChart, countTo, sparkline · `js/scales.js` scale colore, colorimetria · `js/demo.js` dati simulati
+- `js/main.js` stato, polling, scheda zona (valore + storico) e pannelli Aria/Luce/Luci · `js/api.js` sessione/token, storico, comando luci · `js/map.js` pianta+poligoni
+- `js/fx.js` SpectrumChart, countTo, sparkline (AirField e ChromaChart non più usati) · `js/scales.js` scale colore, colorimetria · `js/demo.js` dati simulati
 - `.github/workflows/pages.yml` deploy su push a `main`
 - Lato Pi (repo Building_Manager): `fair_api.py`, `setup_fair.sh`, `deploy/hvac.service`, modifica a `_require_customer_code` in Manager.py
 

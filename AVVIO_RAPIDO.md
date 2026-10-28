@@ -24,7 +24,7 @@ python -m http.server 8080          # alternativa: npx serve -l 8080
 La pagina è ora su `http://localhost:8080/`.
 
 ## 2. Prova senza Raspberry (dati simulati)
-Apri `http://localhost:8080/?demo`. Per aprire direttamente la scheda di una zona: `http://localhost:8080/?demo&open=Sala%20conferenze`.
+Apri `http://localhost:8080/?demo`. Per aprire direttamente la scheda di una zona: `http://localhost:8080/?demo&open=Sala%20conferenze` (aggiungi `&metric=co2|hum|lux` per la metrica, oppure `&focus=air|light|lights|rele` per i pannelli Aria, Luce, Luci, Relè).
 
 ## 3. Collegarsi al Raspberry
 L'indirizzo del Raspberry viene passato nel frammento dell'URL (`#a=`) e salvato nel browser, quindi basta farlo una volta.
@@ -50,7 +50,7 @@ poi apri:
 ```
 http://localhost:8080/#t=<TOKEN>&a=http://192.168.103.198:5000
 ```
-Nella scheda di una zona compare lo slider "Luci". Senza token lo slider non c'è.
+Nel pannello "Luci" (pulsante sotto la mappa) si muovono dimmer e colore; senza token gli slider sono disattivati.
 
 Note:
 - La pagina accetta `#a=` solo con `https://*.ts.net` (Tailscale Funnel) oppure `http://` verso `localhost`, `127.*`, `10.*`, `192.168.*`, `172.16-31.*`.
@@ -70,11 +70,11 @@ GitHub Pages (https) **non** può leggere il Raspberry in `http` (blocco "mixed 
 | `js/main.js` | stato, polling ogni 2 s, scheda zona, dimmer |
 | `js/api.js` | sessione (indirizzo + token) e chiamate al Raspberry |
 | `js/map.js` | pianta e poligoni delle zone |
-| `js/fx.js`, `js/fx2.js` | animazioni (aria/CO₂, spettro, termometro, goccia, presenza) |
+| `js/fx.js` | grafici spettro e cromaticità, conteggio animato, sparkline |
 | `js/occupancy.js` | stima persone dalla CO₂ (volume e ricambi d'aria per zona in `ZONE_CFG`) |
 | `js/scales.js`, `js/demo.js` | scale colore e dati simulati |
 
-API usate (tutte sul Raspberry): `GET /fair/api/state`, `GET /fair/plan/<piano>` (SVG pianta), `POST /fair/api/zone/<zona>/luci` con `{"pct": 0..100}` (solo con token).
+API usate (tutte sul Raspberry): `GET /fair/api/state`, `GET /fair/plan/<piano>` (SVG pianta), `GET /fair/api/zone/<zona>/history?m=t|hum|co2|lux&hours=1..48` (storico per il grafico), `POST /fair/api/zone/<zona>/luci` con `{"pct": 0..100}` e/o `{"ct": 2700..6500}` in kelvin, solo con token (il colore agisce solo sulle lampade che lo supportano), `POST /fair/api/zone/<zona>/rele` con `{"k":"hvac_caldo|hvac_freddo|ventola|umidificatore|deumidificatore","on":true}`, `{"k":"ventola","vel":0..3}` o `{"manuale":false}` (solo con token; il comando mette la zona in manuale).
 
 ## Problemi comuni
 | Sintomo | Causa / rimedio |
@@ -83,10 +83,11 @@ API usate (tutte sul Raspberry): `GET /fair/api/state`, `GET /fair/plan/<piano>`
 | "QR scaduto o non valido" | il Raspberry risponde 401: manca `FAIR_OPEN=1` oppure il token è scaduto, rigenerarlo |
 | Sfondo vuoto | cache del browser con file vecchi: Ctrl+F5; guardare la console (F12) per errori JavaScript |
 | Dati fermi | il piè di pagina mostra "Aggiornato alle hh:mm:ss": se non avanza, il Raspberry non risponde |
-| Lo slider luci non c'è | manca il token nell'URL, oppure la zona non ha luci |
+| Gli slider luci sono grigi | manca il token nell'URL. Lo slider colore compare solo se la zona ha lampade con temperatura colore |
+| Grafico vuoto ("Nessun dato storico") | la zona non ha letture per quella metrica nelle ultime ore |
 | Nessuna "persona stimata" | la zona non ha sensore CO₂ (resta solo il PIR) |
 | `curl` al Raspberry non risponde | IP cambiato o reti diverse: verificare IP e che PC e Raspberry siano nella stessa rete |
 
 ## Note di sicurezza
-- Con `FAIR_OPEN=1` chiunque sulla rete locale legge i dati; i comandi richiedono sempre il token. Non esporre il Raspberry su internet in questa modalità.
+- Con `FAIR_OPEN=1` chiunque sulla rete locale legge i dati; i comandi (luci, colore, relè HVAC/ventola/umidità) richiedono sempre il token. Chi ha il QR può accendere HVAC e ventole della zona: usa token di poche ore e riporta le zone in automatico a fine giornata. Non esporre il Raspberry su internet in questa modalità.
 - Non committare token né indirizzi privati nel repo.

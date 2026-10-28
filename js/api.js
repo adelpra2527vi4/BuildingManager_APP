@@ -42,12 +42,21 @@ export async function getPlanUrl(s, id) {
   return planCache.get(id);
 }
 
-/** Dimmer delle luci di una zona (pct 0..100, 0 = spente). Richiede il token (sessione da QR). */
-export async function setLights(s, zona, pct) {
-  const r = await fetch(s.a + '/fair/api/zone/' + encodeURIComponent(zona) + '/luci', {
+/** Storico di una metrica della zona (m = t|hum|co2|lux): { pts: [{ t, mn, av, mx }] }, t in secondi. */
+export const getHistory = async (s, zona, m, hours) =>
+  (await call(s, `/fair/api/zone/${encodeURIComponent(zona)}/history?m=${m}&hours=${hours}`)).json();
+
+async function post(s, zona, azione, body) {
+  const r = await fetch(s.a + '/fair/api/zone/' + encodeURIComponent(zona) + '/' + azione, {
     method: 'POST', headers: { Authorization: 'Bearer ' + s.t, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pct }), cache: 'no-store',
+    body: JSON.stringify(body), cache: 'no-store',
   });
   if (!r.ok) throw new Error('http ' + r.status);
   return r.json();
 }
+
+/** Luci di una zona: { pct } dimmer 0..100 (0 = spente) e/o { ct } temperatura colore in K. Richiede il token (sessione da QR). */
+export const setLights = (s, zona, body) => post(s, zona, 'luci', body);
+
+/** Relè di una zona: { k, on } per categoria, { k: 'ventola', vel: 0..3 }, oppure { manuale: false } per tornare in automatico. Con token. */
+export const setRele = (s, zona, body) => post(s, zona, 'rele', body);

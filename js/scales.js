@@ -15,7 +15,7 @@ const STOPS = {
   hum: [[250, 176, 60], [52, 211, 153], [34, 211, 238], [59, 130, 246]],
   lux: [[30, 41, 59], [120, 90, 40], [250, 204, 21], [255, 247, 205]],
 };
-const RANGE = { t: [16, 32], co2: [400, 2000], hum: [20, 80], lux: [0, 1000] };
+export const RANGE = { t: [16, 32], co2: [400, 2000], hum: [20, 80], lux: [0, 1000] };
 export const METRICS = {
   t: { label: 'Temperatura', unit: '°C', dec: 1 },
   co2: { label: 'CO₂', unit: 'ppm', dec: 0 },
@@ -66,6 +66,14 @@ export function cctToRgb(K) {
   const g = t <= 66 ? 99.4708025861 * Math.log(t) - 161.1195681661 : 288.1221695283 * (t - 60) ** -0.0755148492;
   const b = t >= 66 ? 255 : t <= 19 ? 0 : 138.5177312231 * Math.log(t - 10) - 305.0447927307;
   return [r, g, b].map(c => Math.round(clamp(c, 0, 255)));
+}
+
+/** Cromaticità CIE (x,y) → colore sRGB approssimato a luminanza costante. */
+export function xyToRgb(x, y) {
+  const X = x / y, Z = (1 - x - y) / y;
+  const lin = [3.2406 * X - 1.5372 - 0.4986 * Z, -0.9689 * X + 1.8758 + 0.0415 * Z, 0.0557 * X - 0.204 + 1.057 * Z].map(c => Math.max(0, c));
+  const m = Math.max(...lin) || 1;
+  return lin.map(c => Math.round(255 * Math.pow(c / m, 1 / 2.2)));
 }
 
 export const verdictCo2 = (p) => p < 600 ? 'Aria eccellente' : p < 800 ? 'Aria ottima' : p < 1000 ? 'Aria buona'
