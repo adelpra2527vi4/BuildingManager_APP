@@ -158,6 +158,6 @@ function fillSheet(first) {
 }
 
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.sel) closeSheet(); });
-if (session && session.t) setTimeout(() => gate('Sessione scaduta', 'Inquadra di nuovo il QR code allo stand.'), Math.min(expiresAt(session) - Date.now(), 2 ** 31 - 1));
+if (session && session.t) setTimeout(() => gate('Sessione scaduta', 'Riapri il link.'), Math.min(expiresAt(session) - Date.now(), 2 ** 31 - 1));
 
 if (demo || session) start();
