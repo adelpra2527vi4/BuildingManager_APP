@@ -4,27 +4,29 @@ const KEY = 'fair.session';
 /** Legge #t=TOKEN&a=URL dal QR, lo salva e ripulisce l'URL. Ritorna la sessione valida o null. */
 export function initSession() {
   const h = new URLSearchParams(location.hash.slice(1));
-  if (h.get('t') && h.get('a')) {
+  if (h.get('a')) {
     try {
       const u = new URL(h.get('a'));
       // Solo HTTPS su un host Tailscale: un link manipolato non puo' puntare altrove.
-      if (u.protocol === 'https:' && u.hostname.endsWith('.ts.net'))
-        localStorage.setItem(KEY, JSON.stringify({ t: h.get('t'), a: u.origin }));
+      // TEMP test senza login: accesso libero (token vuoto) anche a http su IP di rete locale.
+      const lan = u.protocol === 'http:' && /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(u.hostname);
+      if ((u.protocol === 'https:' && u.hostname.endsWith('.ts.net') && h.get('t')) || (lan && !h.get('t')))
+        localStorage.setItem(KEY, JSON.stringify({ t: h.get('t') || '', a: u.origin }));
     } catch { /* URL non valido: ignora */ }
     history.replaceState(null, '', location.pathname + location.search);
   }
   try {
     const s = JSON.parse(localStorage.getItem(KEY));
-    if (s && Number(s.t.split('.')[1]) * 1000 > Date.now()) return s;
+    if (s && (!s.t || Number(s.t.split('.')[1]) * 1000 > Date.now())) return s;
   } catch { /* storage assente o corrotto */ }
   return null;
 }
 
-export const expiresAt = (s) => Number(s.t.split('.')[1]) * 1000;
+export const expiresAt = (s) => s.t ? Number(s.t.split('.')[1]) * 1000 : Infinity;
 export const clearSession = () => { try { localStorage.removeItem(KEY); } catch { /* ok */ } };
 
 async function call(s, path) {
-  const r = await fetch(s.a + path, { headers: { Authorization: 'Bearer ' + s.t }, cache: 'no-store' });
+  const r = await fetch(s.a + path, { headers: s.t ? { Authorization: 'Bearer ' + s.t } : {}, cache: 'no-store' });
   if (r.status === 401) throw Object.assign(new Error('auth'), { auth: true });
   if (!r.ok) throw new Error('http ' + r.status);
   return r;
